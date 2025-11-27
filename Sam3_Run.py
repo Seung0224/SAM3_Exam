@@ -10,13 +10,13 @@ from PIL import Image
 from sam3.model_builder import build_sam3_image_model
 from sam3.model.sam3_image_processor import Sam3Processor
 
-IMAGE_PATH = r"D:\1.png"
+IMAGE_PATH = r"D:\20251126_Pallet_Pose_images\Color\20251118_200012_Color.png"
 OUTPUT_DIR = os.path.join(os.path.expanduser("~"), "Desktop")
 
 # 한 개만 쓸 때도 ["dark blob"] 처럼 리스트로 쓰면 됨
 # "dark blob", "circle", "bright spot", "etc"
 TEXT_PROMPTS: List[str] = [
-    "dark blob"
+    "Blue Pallet"
 ]
 
 # 한 프롬프트에서 여러 인스턴스가 나왔을 때 처리 방식
@@ -25,10 +25,10 @@ TEXT_PROMPTS: List[str] = [
 USE_ONLY_BEST_MASK_PER_PROMPT = False
 
 MASK_PROB_THRESHOLD = 0.3     # 그대로 유지
-MASK_ALPHA = 0.25             # 더 투명하게 (0.0~1.0)
+MASK_ALPHA = 0.5             # 더 투명하게 (0.0~1.0)
 
 PROMPT_COLORS_RGB = [
-    (0, 128, 255),   # 파란색 계열 (첫 번째 프롬프트)
+    (255, 0, 0),   # 파란색 계열 (첫 번째 프롬프트)
     (0, 255, 255),   # 시안 (두 번째 프롬프트)
     (255, 0, 255),   # 마젠타
     (0, 255, 0),     # 초록
@@ -154,67 +154,68 @@ def save_overlay_image(overlay_image: Image.Image,image_path: str,output_dir: st
 # 메인 실행부
 # =========================================
 
-def main():
-    print(f"[INFO] Input image : {IMAGE_PATH}")
-    print(f"[INFO] Output dir  : {OUTPUT_DIR}")
-    print(f"[INFO] Text prompts ({len(TEXT_PROMPTS)}):")
-    for i, p in enumerate(TEXT_PROMPTS, 1):
-        print(f"       {i}. {p}")
 
-    processor = load_sam3()
+# def main():
+#     print(f"[INFO] Input image : {IMAGE_PATH}")
+#     print(f"[INFO] Output dir  : {OUTPUT_DIR}")
+#     print(f"[INFO] Text prompts ({len(TEXT_PROMPTS)}):")
+#     for i, p in enumerate(TEXT_PROMPTS, 1):
+#         print(f"       {i}. {p}")
 
-    image_pil, results = run_sam3_text_prompts(
-        processor=processor,
-        image_path=IMAGE_PATH,
-        text_prompts=TEXT_PROMPTS,
-    )
+#     processor = load_sam3()
 
-    # 최종 오버레이용 베이스 (RGBA)
-    overlay_rgba = image_pil.convert("RGBA")
+#     image_pil, results = run_sam3_text_prompts(
+#         processor=processor,
+#         image_path=IMAGE_PATH,
+#         text_prompts=TEXT_PROMPTS,
+#     )
 
-    any_mask_used = False
+#     # 최종 오버레이용 베이스 (RGBA)
+#     overlay_rgba = image_pil.convert("RGBA")
 
-    for idx, res in enumerate(results):
-        prompt = res["prompt"]
-        masks = res["masks"]
-        scores = res["scores"]
+#     any_mask_used = False
+
+#     for idx, res in enumerate(results):
+#         prompt = res["prompt"]
+#         masks = res["masks"]
+#         scores = res["scores"]
         
-        print(prompt, masks.shape, scores) 
+#         print(prompt, masks.shape, scores) 
 
-        color = PROMPT_COLORS_RGB[idx % len(PROMPT_COLORS_RGB)]
+#         color = PROMPT_COLORS_RGB[idx % len(PROMPT_COLORS_RGB)]
 
-        mask_hw = _masks_to_binary_hw(
-            masks_tensor=masks,
-            scores_tensor=scores,
-            use_only_best=USE_ONLY_BEST_MASK_PER_PROMPT,
-            prob_threshold=MASK_PROB_THRESHOLD,
-        )
+#         mask_hw = _masks_to_binary_hw(
+#             masks_tensor=masks,
+#             scores_tensor=scores,
+#             use_only_best=USE_ONLY_BEST_MASK_PER_PROMPT,
+#             prob_threshold=MASK_PROB_THRESHOLD,
+#         )
 
-        if mask_hw is None:
-            print(f"[WARN] Prompt '{prompt}' 에 대해 유효한 마스크가 없습니다.")
-            continue
+#         if mask_hw is None:
+#             print(f"[WARN] Prompt '{prompt}' 에 대해 유효한 마스크가 없습니다.")
+#             continue
 
-        print(f"[INFO] Prompt '{prompt}' -> overlay color {color}, alpha={MASK_ALPHA}")
-        overlay_rgba = overlay_one_mask(
-            base_rgba=overlay_rgba,
-            mask_hw=mask_hw,
-            color_rgb=color,
-            alpha=MASK_ALPHA,
-        )
-        any_mask_used = True
+#         print(f"[INFO] Prompt '{prompt}' -> overlay color {color}, alpha={MASK_ALPHA}")
+#         overlay_rgba = overlay_one_mask(
+#             base_rgba=overlay_rgba,
+#             mask_hw=mask_hw,
+#             color_rgb=color,
+#             alpha=MASK_ALPHA,
+#         )
+#         any_mask_used = True
 
-    if not any_mask_used:
-        print("[WARN] 어떤 프롬프트에서도 마스크를 생성하지 못했습니다.")
-        return
+#     if not any_mask_used:
+#         print("[WARN] 어떤 프롬프트에서도 마스크를 생성하지 못했습니다.")
+#         return
 
-    out_path = save_overlay_image(
-        overlay_image=overlay_rgba,
-        image_path=IMAGE_PATH,
-        output_dir=OUTPUT_DIR,
-    )
+#     out_path = save_overlay_image(
+#         overlay_image=overlay_rgba,
+#         image_path=IMAGE_PATH,
+#         output_dir=OUTPUT_DIR,
+#     )
 
-    print(f"[OK] Saved overlay image to:\n     {out_path}")
+#     print(f"[OK] Saved overlay image to:\n     {out_path}")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
